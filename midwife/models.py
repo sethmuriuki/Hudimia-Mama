@@ -8,6 +8,7 @@ class User(models.Model):
     phonenumber= models.CharField(max_length=60)
     location = models.CharField(max_length=60, null=True)
     nearest_town = models.CharField(max_length=50)
+    level = models.IntegerField(null=True)
 
     @classmethod
     def requested_users(cls, user_type):
