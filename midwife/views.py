@@ -46,3 +46,28 @@ def ussd_callback(request):
             response = "CON Please enter your name:\n"
 
             return HttpResponse(response, content_type='text/plain')
+
+        if level == 1:
+            session_level2 = User.objects.get(phonenumber=phoneNumber)
+            session_level2.level = 2
+            session_level2.name = userResponse
+            session_level2.save()
+            response = "CON Which is your National id number?"
+            return HttpResponse(response, content_type='text/plain')
+
+        if level == 2:
+            session_level3 = User.objects.get(phonenumber=phoneNumber)
+            session_level3.level = 3
+            session_level3.national_id = userResponse
+            session_level3.save()
+            response = "CON Which is your county? e.g.\n  Nairobi\n Uasin Gishu\n Machakos\ne.t.c ..."
+            return HttpResponse(response, content_type='text/plain')
+
+        if level == 3:
+            session_level4 = User.objects.get(phonenumber=phoneNumber)
+            session_level4.level = 4
+            session_level4.location = userResponse
+            session_level4.save()
+            response = "CON What is your closest town or market center?.\n e.g. Makutano"
+            return HttpResponse(response, content_type='text/plain')
+
