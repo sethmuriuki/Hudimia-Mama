@@ -4,5 +4,5 @@ from . import views
 
 urlpatterns = [
       #url(r'^$', views.index, name='index'),
-      # url(r'ussd',views.callback, name = 'callback'),
+      url(r'ussd',views.ussd_callback, name = 'callback'),
     ]

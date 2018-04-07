@@ -52,7 +52,7 @@ def ussd_callback(request):
             session_level2.level = 2
             session_level2.name = userResponse
             session_level2.save()
-            response = "CON Which is your National id number?"
+            response = "CON Fill in your National id number?"
             return HttpResponse(response, content_type='text/plain')
 
         if level == 2:
@@ -60,7 +60,8 @@ def ussd_callback(request):
             session_level3.level = 3
             session_level3.national_id = userResponse
             session_level3.save()
-            response = "CON Which is your county? e.g.\n  Nairobi\n Uasin Gishu\n Machakos\ne.t.c ..."
+            response = "CON Fill in your county? e.g.\n  Nairobi\n Uasin Gishu\n Machakos\ne.t.c ..."
+
             return HttpResponse(response, content_type='text/plain')
 
         if level == 3:
@@ -69,5 +70,13 @@ def ussd_callback(request):
             session_level4.location = userResponse
             session_level4.save()
             response = "CON What is your closest town or market center?.\n e.g. Makutano"
+
             return HttpResponse(response, content_type='text/plain')
 
+        if level == 4:
+            session_level4 = User.objects.get(phonenumber=phoneNumber)
+            session_level4.level = 5
+            session_level4.nearest_town = userResponse
+            session_level4.save()
+            response = "END Your request has been received. \n We will send you a message with contact details of a midwife/mother that matches your request."
+            return HttpResponse(response, content_type='text/plain')
