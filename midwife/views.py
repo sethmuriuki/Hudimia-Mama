@@ -5,7 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import User, session_levels
 import datetime
 from django.http import HttpResponse
-
+from .methods import get_users
 
 # Create your views here.
 @csrf_exempt
@@ -16,7 +16,7 @@ def ussd_callback(request):
     if request.method == 'POST' and request.POST:
         sessionId = request.POST.get('sessionId')
         serviceCode = request.POST.get('serviceCode')
-        phoneNumber = request.POST.get('phoneNumber')
+        phoneNumber= request.POST.get('phoneNumber')
         text = request.POST.get('text')
         now = datetime.datetime.now()
 
@@ -78,5 +78,50 @@ def ussd_callback(request):
             session_level4.level = 5
             session_level4.nearest_town = userResponse
             session_level4.save()
+            users = User.objects.create(type_of_user=textList[0], name=textList[1], national_id=textList[2], location=textList[3], nearest_town=textList[4])
+            users.save()
+            requested_users = User.requested_users(textList[0])
+            phone_numbers = get_users(requested_users,textList[3],textList[4])
             response = "END Your request has been received. \n We will send you a message with contact details of a midwife/mother that matches your request."
             return HttpResponse(response, content_type='text/plain')
+
+        username = username
+        apiKey = apikey
+
+        to = phoneNumber
+        message = 'Thank you ' + user.name + ' for using our services.\n' \
+                                             'This is your entry:\n\n' \
+                                             'Product Name: ' + textList[4] + '\n' \
+                                                                              'Quantity: ' + textList[5] + '\n' \
+                                                                                                           'Price: ' + \
+                  textList[6] + '\n\n' \
+                                'If this entry is accurate, we will send you information matching your request.\n' \
+                                'If you would like to make another entry dial. \n*384*5611#'
+        message1 = 'Find below contact the numbers below matching your request: \n' + contacts
+
+        gateway = AfricasTalkingGateway(username, apiKey)
+
+        try:
+            # That's it, hit send and we'll take care of the rest.
+
+            results = gateway.sendMessage(to, message)
+            results1 = gateway.sendMessage(to, message1)
+
+            for recipient in results:
+                # status is either "Success" or "error message"
+                print('number=%s;status=%s;messageId=%s;cost=%s' % (recipient['number'],
+                                                                    recipient['status'],
+                                                                    recipient['messageId'],
+                                                                    recipient['cost']))
+
+            for recipient in results1:
+                # status is either "Success" or "error message"
+                print('number=%s;status=%s;messageId=%s;cost=%s' % (recipient['number'],
+                                                                    recipient['status'],
+                                                                    recipient['messageId'],
+                                                                    recipient['cost']))
+
+        except AfricasTalkingGatewayException as e:
+            print('Encountered an error while sending: %s' % str(e))
+
+        return HttpResponse(response, content_type='text/plain')
