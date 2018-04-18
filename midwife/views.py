@@ -5,9 +5,12 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import User, session_levels
 import datetime
 from django.http import HttpResponse
-from .methods import get_users
+from .methods import get_users, get_phonenumbers,details_generator, final_list
 
 # Create your views here.
+username = username
+apiKey = apikey
+
 @csrf_exempt
 def ussd_callback(request):
     '''
@@ -76,52 +79,61 @@ def ussd_callback(request):
         if level == 4:
             session_level4 = User.objects.get(phonenumber=phoneNumber)
             session_level4.level = 5
-            session_level4.nearest_town = userResponse
-            session_level4.save()
-            users = User.objects.create(type_of_user=textList[0], name=textList[1], national_id=textList[2], location=textList[3], nearest_town=textList[4])
+            users = User.objects.create(type_of_user=textList[0],name=textList[1])
             users.save()
-            requested_users = User.requested_users(textList[0])
-            phone_numbers = get_users(requested_users,textList[3],textList[4])
             response = "END Your request has been received. \n We will send you a message with contact details of a midwife/mother that matches your request."
+            current_location = textList[3]
+            current_phonenumber = phoneNumber
+            current_user= textList[0]
+            current_name = textList[2]
+            current_idno=textList[3]
+
+            requested_users = User.requested_users(current_user)
+            my_users = get_users(requested_users, current_location, textList[4])
+            print(my_users)
+            # # # list_location= requested_location(current_location)
+            # # # list_name= requested_name(current_name)
+            # # # results_list = final_list(requested_users,list_location,list_name)
+            # # found_phonenumbers = get_phonenumbers(results_list)
+            #
+            # contacts= details_generator(found_phonenumbers)
+            # print(contacts)
+
+
+            to = phoneNumber
+            message = 'Thank you ' + user.name + ' for using our services.\n' \
+                                                 'This is your entry:\n\n' \
+                                                 'Name: ' + textList[1] + '\n' \
+                                                 'Location: ' + textList[3] + '\n' \
+                                                 'Nearest town: ' + \
+                      textList[4] + '\n\n' \
+                                    'If this entry is accurate, we will send you information matching your request.\n' \
+                                    'If you would like to make another entry dial. \n*384*5611#'
+            # message1 = 'Find below contact the numbers below matching your request: \n' + contacts
+
+            gateway = AfricasTalkingGateway(username, apiKey)
+
+            try:
+                # That's it, hit send and we'll take care of the rest.
+
+                results = gateway.sendMessage(to, message)
+                # results1 = gateway.sendMessage(to, message1)
+
+                for recipient in results:
+                    # status is either "Success" or "error message"
+                    print('number=%s;status=%s;messageId=%s;cost=%s' % (recipient['number'],
+                                                                        recipient['status'],
+                                                                        recipient['messageId'],
+                                                                        recipient['cost']))
+
+                # for recipient in results1:
+                #     # status is either "Success" or "error message"
+                #     print('number=%s;status=%s;messageId=%s;cost=%s' % (recipient['number'],
+                #                                                         recipient['status'],
+                #                                                         recipient['messageId'],
+                #                                                         recipient['cost']))
+
+            except AfricasTalkingGatewayException as e:
+                print('Encountered an error while sending: %s' % str(e))
+
             return HttpResponse(response, content_type='text/plain')
-
-        username = username
-        apiKey = apikey
-
-        to = phoneNumber
-        message = 'Thank you ' + user.name + ' for using our services.\n' \
-                                             'This is your entry:\n\n' \
-                                             'Product Name: ' + textList[4] + '\n' \
-                                                                              'Quantity: ' + textList[5] + '\n' \
-                                                                                                           'Price: ' + \
-                  textList[6] + '\n\n' \
-                                'If this entry is accurate, we will send you information matching your request.\n' \
-                                'If you would like to make another entry dial. \n*384*5611#'
-        message1 = 'Find below contact the numbers below matching your request: \n' + contacts
-
-        gateway = AfricasTalkingGateway(username, apiKey)
-
-        try:
-            # That's it, hit send and we'll take care of the rest.
-
-            results = gateway.sendMessage(to, message)
-            results1 = gateway.sendMessage(to, message1)
-
-            for recipient in results:
-                # status is either "Success" or "error message"
-                print('number=%s;status=%s;messageId=%s;cost=%s' % (recipient['number'],
-                                                                    recipient['status'],
-                                                                    recipient['messageId'],
-                                                                    recipient['cost']))
-
-            for recipient in results1:
-                # status is either "Success" or "error message"
-                print('number=%s;status=%s;messageId=%s;cost=%s' % (recipient['number'],
-                                                                    recipient['status'],
-                                                                    recipient['messageId'],
-                                                                    recipient['cost']))
-
-        except AfricasTalkingGatewayException as e:
-            print('Encountered an error while sending: %s' % str(e))
-
-        return HttpResponse(response, content_type='text/plain')
